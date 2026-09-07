@@ -1,4 +1,5 @@
-export default function Home() {
+import Link from "next/link"
+ export default function Home() {
   const modules = [
     { title: "Jobs", icon: "🔧", text: "Quotes, live jobs, surveys & installations" },
     { title: "Customers", icon: "👥", text: "Customer database & communication" },
@@ -51,7 +52,8 @@ export default function Home() {
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {modules.map((module) => (
-            <button
+            <Link
+            href="/jobs"
               key={module.title}
               className="bg-white text-left rounded-xl p-5 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-400 transition"
             >
@@ -62,7 +64,7 @@ export default function Home() {
               <p className="text-sm text-slate-500 mt-2">
                 {module.text}
               </p>
-            </button>
+            </Link>
           ))}
         </section>
       </div>
