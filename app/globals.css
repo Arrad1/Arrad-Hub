@@ -12,15 +12,39 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.form-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 0.625rem 0.75rem;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.form-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px #fef3c7;
+}
+
+.quote-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+@media print {
+  @page { size: A4; margin: 0; }
+  .no-print { display: none !important; }
+  .quote-document { min-height: 297mm; }
+  body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
