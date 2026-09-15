@@ -26,7 +26,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
-      - uses: android-actions/setup-android@v3
+      - name: Install Android 16 build tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Build current Android test package
         run: gradle :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
