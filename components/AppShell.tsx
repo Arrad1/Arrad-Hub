@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import PwaInstall from "@/components/PwaInstall";
 
 const nav = [
   ["Dashboard", "/"], ["Enquiries", "/enquiries"], ["Customers", "/customers"], ["Quotes", "/jobs/quotes"],
@@ -24,7 +25,7 @@ export default function AppShell({ title, description, actions, children }: {
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 font-black text-slate-950">A</span>
               <span><strong className="block tracking-[0.12em]">ARRAD HUB</strong><small className="text-slate-400">Business control centre</small></span>
             </Link>
-            <span className="rounded-full border border-white/15 px-3 py-1 text-xs text-slate-300">Testing v1</span>
+            <div className="flex items-center gap-2"><PwaInstall /><span className="rounded-full border border-white/15 px-3 py-1 text-xs text-slate-300">Testing v1</span></div>
           </div>
           <nav className="flex gap-1 overflow-x-auto pb-1" aria-label="Main navigation">
             {nav.map(([label, href]) => {
