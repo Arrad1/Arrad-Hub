@@ -27,14 +27,23 @@ function modulePixels(module: DeckModule, rotated: boolean, siteLengthMm: number
 
 function accessoryPixels(item: Pick<PlacedAccessory, "kind" | "rotated" | "widthMm" | "treads" | "goingMm">) {
   const width = item.widthMm * SCALE;
-  const depth = item.kind === "steps" ? (item.treads ?? 3) * (item.goingMm ?? 250) * SCALE : Math.max(14, 180 * SCALE);
+  const depth = item.kind === "steps" ? (item.treads ?? 3) * (item.goingMm ?? 250) * SCALE : 34;
   return item.rotated ? { width: depth, height: width } : { width, height: depth };
 }
 
 function AccessoryDrawing({ item, presentation }: { item: PlacedAccessory; presentation: boolean }) {
   const treadDirection = item.rotated ? "90deg" : "0deg";
   if (item.kind === "gate") {
-    return <div className={`relative h-full w-full border-2 ${presentation ? "border-slate-200 bg-[#303a3d]" : "border-slate-700 bg-white/90"}`}><span className="absolute inset-0 bg-[linear-gradient(to_bottom_right,transparent_47%,currentColor_48%,currentColor_52%,transparent_53%)] text-slate-700" /><span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-white/90 px-1 text-[9px] font-black text-slate-900">GATE</span></div>;
+    const stroke = presentation ? "#f1f5f9" : "#334155";
+    return <div className="relative h-full w-full overflow-visible">
+      <svg viewBox="0 0 100 55" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+        <rect x="0" y="43" width="11" height="11" fill={presentation ? "#20292b" : "#f8fafc"} stroke={stroke} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        <rect x="89" y="43" width="11" height="11" fill={presentation ? "#20292b" : "#f8fafc"} stroke={stroke} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        <line x1="6" y1="46" x2="58" y2="4" stroke={stroke} strokeWidth="3" vectorEffect="non-scaling-stroke" />
+        <path d="M58 4 Q91 18 94 46" fill="none" stroke={stroke} strokeWidth="2" strokeDasharray="6 5" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <span className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-full whitespace-nowrap rounded bg-white/90 px-1 text-[9px] font-black text-slate-900">GATE</span>
+    </div>;
   }
   return <div className={`relative h-full w-full border-2 border-slate-700 ${presentation ? "bg-[#3f4b4f]" : "bg-[#d9b77d]"}`} style={{ backgroundImage: `repeating-linear-gradient(${treadDirection}, transparent 0 calc(${100 / (item.treads ?? 3)}% - 1px), rgba(30,41,59,.75) calc(${100 / (item.treads ?? 3)}% - 1px) ${100 / (item.treads ?? 3)}%)` }}>
     {(["tl", "tr", "bl", "br"] as PostCorner[]).map((corner) => <Post key={corner} corner={corner} size={7} presentation={presentation} />)}
@@ -316,7 +325,7 @@ export default function DeckingDesigner() {
               <button type="button" onClick={() => addAccessory("steps")} className="mt-2 w-full rounded-md bg-[#7ac400] px-2 py-2 text-xs font-black text-[#242624]">+ Add steps</button>
             </article>
             <article draggable onDragStart={(event) => event.dataTransfer.setData("text/accessory-kind", "gate")} className="rounded-lg border border-slate-200 bg-white p-2 text-center">
-              <div className="relative mx-auto h-12 w-16 border-2 border-slate-700 bg-white"><span className="absolute inset-0 bg-[linear-gradient(to_bottom_right,transparent_47%,#334155_48%,#334155_52%,transparent_53%)]" /></div>
+              <div className="relative mx-auto h-12 w-16"><svg viewBox="0 0 100 60" className="h-full w-full" aria-hidden="true"><rect x="1" y="47" width="12" height="12" fill="#f8fafc" stroke="#334155" strokeWidth="2" /><rect x="87" y="47" width="12" height="12" fill="#f8fafc" stroke="#334155" strokeWidth="2" /><line x1="7" y1="50" x2="58" y2="5" stroke="#334155" strokeWidth="3" /><path d="M58 5 Q91 19 93 50" fill="none" stroke="#334155" strokeWidth="2" strokeDasharray="6 5" /></svg></div>
               <p className="mt-2 text-xs font-black text-slate-800">Gate · 740 mm</p>
               <button type="button" onClick={() => addAccessory("gate")} className="mt-2 w-full rounded-md bg-[#7ac400] px-2 py-2 text-xs font-black text-[#242624]">+ Add gate</button>
             </article>
