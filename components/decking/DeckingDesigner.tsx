@@ -71,6 +71,7 @@ export default function DeckingDesigner() {
   const [finalView, setFinalView] = useState(false);
   const [canvasZoom, setCanvasZoom] = useState(1);
   const [loaded, setLoaded] = useState(false);
+  const [measurementDraft, setMeasurementDraft] = useState({ siteLengthMm: "", siteWidthMm: "" });
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -182,13 +183,27 @@ export default function DeckingDesigner() {
     setPlaced((current) => current.map((candidate) => candidate.instanceId === selected ? { ...candidate, rotated: !candidate.rotated } : candidate));
   }
 
-  function updateSelectedMeasurement(field: "siteLengthMm" | "siteWidthMm", value: number) {
-    if (!selected || !Number.isFinite(value)) return;
-    setPlaced((current) => current.map((item) => item.instanceId === selected ? { ...item, [field]: Math.max(100, value) } : item));
+  function commitSelectedMeasurement(field: "siteLengthMm" | "siteWidthMm") {
+    if (!selected) return;
+    const value = Number(measurementDraft[field]);
+    if (Number.isFinite(value) && value >= 100) {
+      setPlaced((current) => current.map((item) => item.instanceId === selected ? { ...item, [field]: value } : item));
+      return;
+    }
+    const item = placed.find((candidate) => candidate.instanceId === selected);
+    const definition = item ? deckModules.find((candidate) => candidate.id === item.moduleId) : undefined;
+    if (item && definition) setMeasurementDraft((current) => ({ ...current, [field]: String(item[field] ?? definition[field === "siteLengthMm" ? "lengthMm" : "widthMm"]) }));
   }
 
   const selectedItem = placed.find((item) => item.instanceId === selected);
   const selectedDefinition = selectedItem ? deckModules.find((item) => item.id === selectedItem.moduleId) : undefined;
+  useEffect(() => {
+    if (!selectedItem || !selectedDefinition) return;
+    setMeasurementDraft({
+      siteLengthMm: String(selectedItem.siteLengthMm ?? selectedDefinition.lengthMm),
+      siteWidthMm: String(selectedItem.siteWidthMm ?? selectedDefinition.widthMm),
+    });
+  }, [selected, selectedDefinition, selectedItem]);
   const caravanLengthPx = CARAVAN_LENGTH_MM * SCALE;
   const caravanWidthPx = CARAVAN_WIDTH_MM * SCALE;
   const caravanSize = caravanVertical
@@ -233,8 +248,8 @@ export default function DeckingDesigner() {
         </div>
         {selectedItem && selectedDefinition && <div className="mb-3 grid gap-3 rounded-xl border-2 border-[#cdeba1] bg-[#f7fdea] p-3 sm:grid-cols-[auto_1fr_1fr] sm:items-end">
           <div className="pr-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Selected box</p><p className="text-lg font-black text-slate-950">#{selectedDefinition.id} · {selectedDefinition.widthFt} ft × {selectedDefinition.lengthFt} ft</p></div>
-          <label><span className="field-label">Actual site length (mm)</span><input type="number" min="100" step="1" className="form-input" value={selectedItem.siteLengthMm ?? selectedDefinition.lengthMm} onChange={(event) => updateSelectedMeasurement("siteLengthMm", Number(event.target.value))} /></label>
-          <label><span className="field-label">Actual site width (mm)</span><input type="number" min="100" step="1" className="form-input" value={selectedItem.siteWidthMm ?? selectedDefinition.widthMm} onChange={(event) => updateSelectedMeasurement("siteWidthMm", Number(event.target.value))} /></label>
+          <label><span className="field-label">Actual site length (mm)</span><input type="number" inputMode="numeric" min="100" step="1" className="form-input" value={measurementDraft.siteLengthMm} onChange={(event) => setMeasurementDraft((current) => ({ ...current, siteLengthMm: event.target.value }))} onBlur={() => commitSelectedMeasurement("siteLengthMm")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>
+          <label><span className="field-label">Actual site width (mm)</span><input type="number" inputMode="numeric" min="100" step="1" className="form-input" value={measurementDraft.siteWidthMm} onChange={(event) => setMeasurementDraft((current) => ({ ...current, siteWidthMm: event.target.value }))} onBlur={() => commitSelectedMeasurement("siteWidthMm")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>
         </div>}
         <div ref={viewportRef} className="overflow-hidden rounded-xl border border-slate-300 bg-white p-1 shadow-sm sm:p-3">
           <div className="relative mx-auto" style={{ width: CANVAS_WIDTH * canvasZoom, height: CANVAS_HEIGHT * canvasZoom }}>
