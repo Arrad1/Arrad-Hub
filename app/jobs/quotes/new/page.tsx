@@ -81,7 +81,7 @@ export default function NewQuotePage() {
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Link href="/jobs/quotes" className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50">Cancel</Link>
-            <button type="submit" className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">Save and view quote</button>
+            <button type="submit" className="rounded-lg bg-[#7ac400] px-5 py-2.5 text-sm font-bold text-[#242624] shadow-sm transition hover:bg-[#8bd51d]">Save and view quote</button>
           </div>
         </form>
       </div>
@@ -94,5 +94,5 @@ function FormSection({ title, description, children }: { title: string; descript
 }
 
 function Field({ label, required, wide, children }: { label: string; required?: boolean; wide?: boolean; children: ReactNode }) {
-  return <label className={wide ? "sm:col-span-2" : ""}><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required && <span className="ml-1 text-amber-600">*</span>}</span>{children}</label>;
+  return <label className={wide ? "sm:col-span-2" : ""}><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required && <span className="ml-1 text-[#5e9e00]">*</span>}</span>{children}</label>;
 }

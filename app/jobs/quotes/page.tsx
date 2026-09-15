@@ -41,7 +41,7 @@ export default function QuotesPage() {
         title="Customer quotes"
         description="Create, review and track quotations before they become live jobs."
         actions={
-          <Link href="/jobs/quotes/new" className="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
+          <Link href="/jobs/quotes/new" className="inline-flex items-center justify-center rounded-lg bg-[#7ac400] px-4 py-2.5 text-sm font-bold text-[#242624] shadow-sm transition hover:bg-[#8bd51d]">
             + New quote
           </Link>
         }
@@ -61,14 +61,14 @@ export default function QuotesPage() {
               <p className="mt-1 text-sm text-slate-500">{quotes.length} {quotes.length === 1 ? "quote" : "quotes"} saved</p>
             </div>
             <label className="sr-only" htmlFor="quote-search">Search quotes</label>
-            <input id="quote-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search customer, site or reference" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 sm:max-w-sm" />
+            <input id="quote-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search customer, site or reference" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#7ac400] focus:ring-2 focus:ring-[#e9f7d4] sm:max-w-sm" />
           </div>
 
           {!loaded ? (
             <p className="p-8 text-center text-sm text-slate-500">Loading quotes…</p>
           ) : filteredQuotes.length === 0 ? (
             <div className="px-6 py-14 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-xl">£</div>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f1f9e5] text-xl">£</div>
               <h2 className="mt-4 font-bold text-slate-900">{quotes.length === 0 ? "No quotes yet" : "No matching quotes"}</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
                 {quotes.length === 0 ? "Create the first customer quote to start building your quote register." : "Try a different customer name, site or quote reference."}

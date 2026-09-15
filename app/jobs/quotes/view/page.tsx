@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { findQuote, formatDate, formatMoney, loadQuotes, updateQuote, type Quote } from "@/lib/quotes";
 import { hubData, type Job } from "@/lib/hub-data";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function ViewQuotePage() {
   return <Suspense fallback={<QuoteLoading />}><QuoteView /></Suspense>;
@@ -27,10 +28,10 @@ function QuoteView() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-xl">?</div>
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#eff8e2] text-xl text-[#4e8500]">?</div>
           <h1 className="mt-4 text-xl font-bold text-slate-950">Quote not found</h1>
           <p className="mt-2 text-sm text-slate-500">This quote may have been removed, or the link may be incomplete.</p>
-          <Link href="/jobs/quotes" className="mt-5 inline-flex rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Return to quotes</Link>
+          <Link href="/jobs/quotes" className="mt-5 inline-flex rounded-lg bg-[#7ac400] px-4 py-2.5 text-sm font-bold text-[#242624]">Return to quotes</Link>
         </div>
       </main>
     );
@@ -51,7 +52,7 @@ function QuoteView() {
         <Link href="/jobs/quotes" className="text-sm font-semibold text-slate-600 transition hover:text-slate-950">← Back to quote register</Link>
         <div className="flex gap-3">
           <button onClick={() => window.print()} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 sm:flex-none">Print / save PDF</button>
-          <Link href="/jobs/quotes/new" className="flex-1 rounded-lg bg-slate-950 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:flex-none">New quote</Link>
+          <Link href="/jobs/quotes/new" className="flex-1 rounded-lg bg-[#7ac400] px-4 py-2 text-center text-sm font-bold text-[#242624] shadow-sm transition hover:bg-[#8bd51d] sm:flex-none">New quote</Link>
           <Link href={`/jobs/quotes/edit?id=${quote.id}`} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-800 shadow-sm sm:flex-none">Edit</Link>
           {quote.status !== "Accepted" && <button onClick={() => acceptAndCreateJob(quote)} className="flex-1 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm sm:flex-none">Accept & create job</button>}
         </div>
@@ -61,17 +62,13 @@ function QuoteView() {
       {(searchParams.get("updated") === "1" || jobCreated) && <div className="no-print mx-auto mb-5 max-w-5xl px-4"><div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{jobCreated ? "Quote accepted and live job created." : "Quote updated successfully."}</div></div>}
 
       <article className="quote-document mx-auto max-w-5xl bg-white shadow-xl print:max-w-none print:shadow-none">
-        <header className="bg-slate-950 px-7 py-8 text-white sm:px-10">
+        <header className="border-b-4 border-[#7ac400] bg-white px-7 py-8 text-[#303230] sm:px-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500 text-xl font-black text-slate-950">A</div>
-              <h1 className="mt-4 text-2xl font-black tracking-[0.14em]">ARRAD</h1>
-              <p className="mt-1 text-sm font-semibold text-slate-300">FOOT BALCONIES LTD</p>
-            </div>
+            <BrandLogo className="h-16 w-[240px] sm:w-[300px]" />
             <div className="sm:text-right">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">Customer quotation</p>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#5e9e00]">Customer quotation</p>
               <p className="mt-2 text-3xl font-bold">{quote.quoteReference || "Quote"}</p>
-              <span className="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white ring-1 ring-inset ring-white/20">{quote.status}</span>
+              <span className="mt-3 inline-flex rounded-full bg-[#eff8e2] px-3 py-1 text-xs font-bold text-[#4e8500] ring-1 ring-inset ring-[#b7dc7d]">{quote.status}</span>
             </div>
           </div>
         </header>
@@ -103,8 +100,8 @@ function QuoteView() {
 
           {quote.notes && <section className="border-t border-slate-200 py-7"><p className="quote-label">Notes and exclusions</p><p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{quote.notes}</p></section>}
 
-          <section className="rounded-xl bg-slate-950 px-6 py-6 text-white sm:flex sm:items-center sm:justify-between">
-            <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-400">Next step</p><h2 className="mt-2 text-lg font-bold">Ready to proceed?</h2><p className="mt-1 text-sm text-slate-300">Please contact Arrad and quote reference {quote.quoteReference || "shown above"}.</p></div>
+          <section className="rounded-xl border-l-8 border-[#7ac400] bg-[#4d4f4c] px-6 py-6 text-white sm:flex sm:items-center sm:justify-between">
+            <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9ddd45]">Next step</p><h2 className="mt-2 text-lg font-bold">Ready to proceed?</h2><p className="mt-1 text-sm text-slate-200">Please contact Arrad and quote reference {quote.quoteReference || "shown above"}.</p></div>
             <div className="mt-4 text-sm font-semibold text-slate-200 sm:mt-0 sm:text-right"><p>Arrad Foot Balconies Ltd</p><p className="mt-1 text-slate-400">Built around your project</p></div>
           </section>
           <footer className="mt-8 border-t border-slate-200 pt-5 text-center text-xs leading-5 text-slate-400">This quotation is based on the information shown above and remains subject to final site confirmation where required.</footer>

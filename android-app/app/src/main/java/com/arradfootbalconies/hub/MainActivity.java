@@ -19,10 +19,10 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.rgb(2, 6, 23));
+        getWindow().setStatusBarColor(Color.rgb(77, 79, 76));
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(2, 6, 23));
+        webView.setBackgroundColor(Color.rgb(77, 79, 76));
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();

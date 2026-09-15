@@ -10,8 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#020617",
-    theme_color: "#020617",
+    background_color: "#4d4f4c",
+    theme_color: "#4d4f4c",
     categories: ["business", "productivity"],
     icons: [
       { src: "/arrad-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

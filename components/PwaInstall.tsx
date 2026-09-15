@@ -43,7 +43,7 @@ export default function PwaInstall() {
     <button
       type="button"
       onClick={install}
-      className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-amber-400"
+      className="rounded-lg bg-[#7ac400] px-3 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-[#8bd51d]"
     >
       Install app
     </button>
