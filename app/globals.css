@@ -42,6 +42,15 @@ body {
   color: #64748b;
 }
 
+.field-label { margin-bottom: 0.5rem; display: block; font-size: 0.875rem; font-weight: 600; color: #334155; }
+.primary-button { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; background: #020617; padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 700; color: white; transition: background 150ms; }
+.primary-button:hover { background: #1e293b; }
+.primary-button:disabled { cursor: not-allowed; opacity: 0.45; }
+.secondary-button { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; border: 1px solid #cbd5e1; background: white; padding: 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 700; color: #1e293b; }
+.secondary-button:hover { background: #f8fafc; }
+.secondary-button:disabled { cursor: not-allowed; opacity: 0.45; }
+.small-select { border-radius: 0.5rem; border: 1px solid #cbd5e1; background: white; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #0f172a; }
+
 @media print {
   @page { size: A4; margin: 0; }
   .no-print { display: none !important; }

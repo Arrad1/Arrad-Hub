@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { findQuote, formatDate, formatMoney, loadQuotes, type Quote } from "@/lib/quotes";
+import { findQuote, formatDate, formatMoney, loadQuotes, updateQuote, type Quote } from "@/lib/quotes";
+import { hubData, type Job } from "@/lib/hub-data";
 
 export default function ViewQuotePage() {
   return <Suspense fallback={<QuoteLoading />}><QuoteView /></Suspense>;
@@ -12,6 +13,7 @@ export default function ViewQuotePage() {
 function QuoteView() {
   const searchParams = useSearchParams();
   const [quote, setQuote] = useState<Quote | null | undefined>(undefined);
+  const [jobCreated, setJobCreated] = useState(false);
 
   useEffect(() => {
     const task = window.setTimeout(() => {
@@ -34,6 +36,15 @@ function QuoteView() {
     );
   }
 
+  function acceptAndCreateJob(currentQuote: Quote) {
+    const jobs = hubData.jobs();
+    if (!jobs.some((job) => job.quoteId === currentQuote.id)) {
+      const job: Job = { id: crypto.randomUUID(), quoteId: currentQuote.id, reference: currentQuote.quoteReference.replace("ARR-", "JOB-") || `JOB-${Date.now()}`, customerName: currentQuote.customerName, site: currentQuote.holidayPark, description: currentQuote.description, value: currentQuote.quoteAmount, status: "Planned", targetDate: "", drawingStatus: "Not started", invoiceStatus: "Not raised" };
+      hubData.saveJobs([job, ...jobs]);
+    }
+    const accepted = { ...currentQuote, status: "Accepted" as const }; updateQuote(accepted); setQuote(accepted); setJobCreated(true);
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 py-6 print:bg-white print:py-0">
       <div className="no-print mx-auto mb-5 flex max-w-5xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
@@ -41,10 +52,13 @@ function QuoteView() {
         <div className="flex gap-3">
           <button onClick={() => window.print()} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 sm:flex-none">Print / save PDF</button>
           <Link href="/jobs/quotes/new" className="flex-1 rounded-lg bg-slate-950 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:flex-none">New quote</Link>
+          <Link href={`/jobs/quotes/edit?id=${quote.id}`} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-800 shadow-sm sm:flex-none">Edit</Link>
+          {quote.status !== "Accepted" && <button onClick={() => acceptAndCreateJob(quote)} className="flex-1 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm sm:flex-none">Accept & create job</button>}
         </div>
       </div>
 
       {searchParams.get("created") === "1" && <div className="no-print mx-auto mb-5 max-w-5xl px-4"><div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">Quote saved successfully.</div></div>}
+      {(searchParams.get("updated") === "1" || jobCreated) && <div className="no-print mx-auto mb-5 max-w-5xl px-4"><div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{jobCreated ? "Quote accepted and live job created." : "Quote updated successfully."}</div></div>}
 
       <article className="quote-document mx-auto max-w-5xl bg-white shadow-xl print:max-w-none print:shadow-none">
         <header className="bg-slate-950 px-7 py-8 text-white sm:px-10">
@@ -82,7 +96,7 @@ function QuoteView() {
             <h2 className="mt-2 text-xl font-bold text-slate-950">Quotation details</h2>
             <div className="mt-5 overflow-hidden rounded-lg border border-slate-200">
               <div className="grid grid-cols-[1fr_auto] gap-4 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500"><span>Description</span><span>Amount</span></div>
-              <div className="grid grid-cols-[1fr_auto] gap-5 px-5 py-6"><p className="whitespace-pre-line text-sm leading-6 text-slate-700">{quote.description || "No description supplied."}</p><p className="font-bold text-slate-950">{formatMoney(quote.quoteAmount)}</p></div>
+              {quote.items?.length ? quote.items.map((item) => <div key={item.id} className="grid grid-cols-[1fr_auto] gap-5 border-t border-slate-100 px-5 py-4 first:border-t-0"><div><p className="text-sm text-slate-700">{item.description}</p><p className="mt-1 text-xs text-slate-400">{item.quantity} × {formatMoney(String(item.unitPrice))}</p></div><p className="font-bold text-slate-950">{formatMoney(String(item.quantity * item.unitPrice))}</p></div>) : <div className="grid grid-cols-[1fr_auto] gap-5 px-5 py-6"><p className="whitespace-pre-line text-sm leading-6 text-slate-700">{quote.description || "No description supplied."}</p><p className="font-bold text-slate-950">{formatMoney(quote.quoteAmount)}</p></div>}
               <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-4"><p className="text-sm font-bold text-slate-700">Quote total</p><p className="text-2xl font-black text-slate-950">{formatMoney(quote.quoteAmount)}</p></div>
             </div>
           </section>

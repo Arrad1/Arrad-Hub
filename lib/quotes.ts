@@ -1,6 +1,7 @@
 export const QUOTES_STORAGE_KEY = "quotes";
 
 export type QuoteStatus = "Draft" | "Sent" | "Accepted" | "Declined";
+export type QuoteItem = { id: string; description: string; quantity: number; unitPrice: number };
 
 export type Quote = {
   id: string;
@@ -16,6 +17,7 @@ export type Quote = {
   validUntil: string;
   status: QuoteStatus;
   notes: string;
+  items?: QuoteItem[];
 };
 
 type StoredQuote = Partial<Quote> & Record<string, unknown>;
@@ -42,6 +44,7 @@ export function normaliseQuote(quote: StoredQuote, index: number): Quote {
       ? (status as QuoteStatus)
       : "Draft",
     notes: text(quote.notes),
+    items: Array.isArray(quote.items) ? quote.items.filter((item): item is QuoteItem => Boolean(item && typeof item === "object")) : undefined,
   };
 }
 
@@ -58,6 +61,13 @@ export function loadQuotes(): Quote[] {
 
 export function saveQuote(quote: Quote) {
   localStorage.setItem(QUOTES_STORAGE_KEY, JSON.stringify([...loadQuotes(), quote]));
+}
+
+export function updateQuote(quote: Quote) {
+  const quotes = loadQuotes();
+  const index = quotes.findIndex((record) => record.id === quote.id);
+  const updated = index === -1 ? [...quotes, quote] : quotes.map((record) => record.id === quote.id ? quote : record);
+  localStorage.setItem(QUOTES_STORAGE_KEY, JSON.stringify(updated));
 }
 
 export function findQuote(quotes: Quote[], id: string | null) {
