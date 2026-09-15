@@ -19,7 +19,7 @@ const widths = [
   { ft: 5, mm: 1480, prices: [1205, 861, 1013, 1337] },
   { ft: 6, mm: 1760, prices: [1205, 861, 1013, 1337] },
   { ft: 7, mm: 2080, prices: [1370, 1011, 1268, 1657] },
-  { ft: 8, mm: 2470, prices: [1370, 1011, 1268, 1657] },
+  { ft: 8, mm: 2370, prices: [1370, 1011, 1268, 1657] },
 ];
 
 const variants: Array<Pick<DeckModule, "lengthFt" | "lengthMm" | "layout" | "posts" | "rails">> = [
