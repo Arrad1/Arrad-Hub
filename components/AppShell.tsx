@@ -10,7 +10,7 @@ const nav = [
   ["Dashboard", "/"], ["Enquiries", "/enquiries"], ["Customers", "/customers"], ["Quotes", "/jobs/quotes"],
   ["Jobs", "/jobs"], ["Production", "/operations/production"],
   ["Installations", "/operations/installations"], ["Invoices", "/invoices"],
-  ["Stock", "/stock"], ["Suppliers", "/suppliers"],
+  ["Deck Designer", "/decking-designer"], ["Stock", "/stock"], ["Suppliers", "/suppliers"],
 ];
 
 export default function AppShell({ title, description, actions, children }: {
