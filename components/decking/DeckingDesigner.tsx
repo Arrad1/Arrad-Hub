@@ -40,12 +40,14 @@ function Post({ corner, size, presentation = false }: { corner: PostCorner; size
 
 export default function DeckingDesigner() {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const [widthFilter, setWidthFilter] = useState<number | "all">("all");
   const [placed, setPlaced] = useState<PlacedModule[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragState>(null);
   const [caravanVertical, setCaravanVertical] = useState(true);
   const [finalView, setFinalView] = useState(false);
+  const [canvasZoom, setCanvasZoom] = useState(1);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -62,6 +64,16 @@ export default function DeckingDesigner() {
   useEffect(() => {
     if (loaded) localStorage.setItem("arrad-deck-design-v1", JSON.stringify(placed));
   }, [placed, loaded]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const fitCanvas = () => setCanvasZoom(Math.min(1, Math.max(0.28, (viewport.clientWidth - 2) / CANVAS_WIDTH)));
+    fitCanvas();
+    const observer = new ResizeObserver(fitCanvas);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
 
   const visibleModules = widthFilter === "all" ? deckModules : deckModules.filter((item) => item.widthFt === widthFilter);
   const total = useMemo(() => placed.reduce((sum, item) => sum + (deckModules.find((module) => module.id === item.moduleId)?.price ?? 0), 0), [placed]);
@@ -85,7 +97,7 @@ export default function DeckingDesigner() {
     if (!rect) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     setSelected(item.instanceId);
-    setDrag({ instanceId: item.instanceId, offsetX: event.clientX - rect.left - item.x, offsetY: event.clientY - rect.top - item.y });
+    setDrag({ instanceId: item.instanceId, offsetX: (event.clientX - rect.left) / canvasZoom - item.x, offsetY: (event.clientY - rect.top) / canvasZoom - item.y });
   }
 
   function move(event: ReactPointerEvent<HTMLButtonElement>) {
@@ -96,8 +108,8 @@ export default function DeckingDesigner() {
       if (item.instanceId !== drag.instanceId) return item;
       const moduleDefinition = deckModules.find((candidate) => candidate.id === item.moduleId)!;
       const size = modulePixels(moduleDefinition, item.rotated, item.siteLengthMm, item.siteWidthMm);
-      const x = Math.round(Math.max(0, Math.min(event.clientX - rect.left - drag.offsetX, CANVAS_WIDTH - size.width)) / GRID) * GRID;
-      const y = Math.round(Math.max(0, Math.min(event.clientY - rect.top - drag.offsetY, CANVAS_HEIGHT - size.height)) / GRID) * GRID;
+      const x = Math.round(Math.max(0, Math.min((event.clientX - rect.left) / canvasZoom - drag.offsetX, CANVAS_WIDTH - size.width)) / GRID) * GRID;
+      const y = Math.round(Math.max(0, Math.min((event.clientY - rect.top) / canvasZoom - drag.offsetY, CANVAS_HEIGHT - size.height)) / GRID) * GRID;
       return { ...item, x, y };
     }));
   }
@@ -168,8 +180,9 @@ export default function DeckingDesigner() {
           <label><span className="field-label">Actual site length (mm)</span><input type="number" min="100" step="1" className="form-input" value={selectedItem.siteLengthMm ?? selectedDefinition.lengthMm} onChange={(event) => updateSelectedMeasurement("siteLengthMm", Number(event.target.value))} /></label>
           <label><span className="field-label">Actual site width (mm)</span><input type="number" min="100" step="1" className="form-input" value={selectedItem.siteWidthMm ?? selectedDefinition.widthMm} onChange={(event) => updateSelectedMeasurement("siteWidthMm", Number(event.target.value))} /></label>
         </div>}
-        <div className="overflow-auto rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
-          <div ref={canvasRef} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = Number(event.dataTransfer.getData("text/module-id")); const rect = canvasRef.current?.getBoundingClientRect(); if (id && rect) addModule(id, event.clientX - rect.left - 60, event.clientY - rect.top - 35); }} className={`relative touch-none overflow-hidden rounded-lg border-2 ${finalView ? "border-emerald-950/40" : "border-dashed border-slate-300"}`} style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: finalView ? "#55753c" : "#f8faf7", backgroundImage: finalView ? "radial-gradient(circle at 20% 30%, rgba(255,255,255,.12) 0 1px, transparent 2px), radial-gradient(circle at 70% 65%, rgba(20,60,20,.20) 0 1px, transparent 2px)" : "linear-gradient(#dfe7da 1px, transparent 1px), linear-gradient(90deg, #dfe7da 1px, transparent 1px)", backgroundSize: finalView ? "13px 17px, 19px 23px" : `${GRID}px ${GRID}px` }}>
+        <div ref={viewportRef} className="overflow-hidden rounded-xl border border-slate-300 bg-white p-1 shadow-sm sm:p-3">
+          <div className="relative mx-auto" style={{ width: CANVAS_WIDTH * canvasZoom, height: CANVAS_HEIGHT * canvasZoom }}>
+          <div ref={canvasRef} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = Number(event.dataTransfer.getData("text/module-id")); const rect = canvasRef.current?.getBoundingClientRect(); if (id && rect) addModule(id, (event.clientX - rect.left) / canvasZoom - 60, (event.clientY - rect.top) / canvasZoom - 35); }} className={`relative origin-top-left touch-none overflow-hidden rounded-lg border-2 ${finalView ? "border-emerald-950/40" : "border-dashed border-slate-300"}`} style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, transform: `scale(${canvasZoom})`, backgroundColor: finalView ? "#55753c" : "#f8faf7", backgroundImage: finalView ? "radial-gradient(circle at 20% 30%, rgba(255,255,255,.12) 0 1px, transparent 2px), radial-gradient(circle at 70% 65%, rgba(20,60,20,.20) 0 1px, transparent 2px)" : "linear-gradient(#dfe7da 1px, transparent 1px), linear-gradient(90deg, #dfe7da 1px, transparent 1px)", backgroundSize: finalView ? "13px 17px, 19px 23px" : `${GRID}px ${GRID}px` }}>
             <div className={`pointer-events-none absolute z-0 rounded-xl border-4 shadow-xl ${finalView ? "border-[#5e5548] bg-[#f2eee5]" : "border-slate-500/70 bg-sky-100/70"}`} style={{ left: (CANVAS_WIDTH - caravanSize.width) / 2, top: (CANVAS_HEIGHT - caravanSize.height) / 2, width: caravanSize.width, height: caravanSize.height }}>
               <div className={`absolute inset-3 rounded-lg border ${finalView ? "border-[#d8d0c2]" : "border-dashed border-slate-400/70"}`} />
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-white/90 px-4 py-2 text-center shadow-sm"><strong className="block text-base text-slate-800">CARAVAN</strong><span className="text-sm font-bold text-slate-600">38 ft × 12 ft</span></div>
@@ -183,8 +196,9 @@ export default function DeckingDesigner() {
               return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId && !finalView ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} presentation={finalView} />{!finalView && <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span>}</button>;
             })}
           </div>
+          </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">Use Plan View for accurate positioning and Final View for the cleaner customer layout. The caravan is 38 ft × 12 ft and posts are 100 mm × 100 mm.</p>
+        <p className="mt-3 text-xs text-slate-500">The plan automatically fits your screen, including Samsung S24. Use Plan View for positioning and Final View for the cleaner customer layout.</p>
       </section>
     </div>
   );
