@@ -6,10 +6,12 @@ import { deckModules, POST_SIZE_MM, type DeckModule, type PostCorner } from "@/l
 type PlacedModule = { instanceId: string; moduleId: number; x: number; y: number; rotated: boolean; siteLengthMm?: number; siteWidthMm?: number };
 type DragState = { instanceId: string; offsetX: number; offsetY: number } | null;
 
-const SCALE = 0.075;
+const SCALE = 0.055;
 const GRID = 10;
 const CANVAS_WIDTH = 1100;
 const CANVAS_HEIGHT = 720;
+const CARAVAN_LENGTH_MM = 11582;
+const CARAVAN_WIDTH_MM = 3658;
 const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 });
 
 function modulePixels(module: DeckModule, rotated: boolean, siteLengthMm: number = module.lengthMm, siteWidthMm: number = module.widthMm) {
@@ -42,6 +44,7 @@ export default function DeckingDesigner() {
   const [placed, setPlaced] = useState<PlacedModule[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragState>(null);
+  const [caravanVertical, setCaravanVertical] = useState(true);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -118,6 +121,11 @@ export default function DeckingDesigner() {
 
   const selectedItem = placed.find((item) => item.instanceId === selected);
   const selectedDefinition = selectedItem ? deckModules.find((item) => item.id === selectedItem.moduleId) : undefined;
+  const caravanLengthPx = CARAVAN_LENGTH_MM * SCALE;
+  const caravanWidthPx = CARAVAN_WIDTH_MM * SCALE;
+  const caravanSize = caravanVertical
+    ? { width: caravanWidthPx, height: caravanLengthPx }
+    : { width: caravanLengthPx, height: caravanWidthPx };
 
   return (
     <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
@@ -146,6 +154,7 @@ export default function DeckingDesigner() {
             <button type="button" disabled={!selected} onClick={() => updateSelected("rotate")} className="secondary-button">↻ Rotate</button>
             <button type="button" disabled={!selected} onClick={() => updateSelected("duplicate")} className="secondary-button">Duplicate</button>
             <button type="button" disabled={!selected} onClick={() => updateSelected("delete")} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-40">Remove</button>
+            <button type="button" onClick={() => setCaravanVertical((current) => !current)} className="secondary-button">↻ Rotate caravan</button>
             <button type="button" disabled={!placed.length} onClick={() => { setPlaced([]); setSelected(null); }} className="secondary-button">Clear plan</button>
           </div>
         </div>
@@ -156,7 +165,13 @@ export default function DeckingDesigner() {
         </div>}
         <div className="overflow-auto rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
           <div ref={canvasRef} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = Number(event.dataTransfer.getData("text/module-id")); const rect = canvasRef.current?.getBoundingClientRect(); if (id && rect) addModule(id, event.clientX - rect.left - 60, event.clientY - rect.top - 35); }} className="relative touch-none overflow-hidden rounded-lg border-2 border-dashed border-slate-300" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: "#f8faf7", backgroundImage: "linear-gradient(#dfe7da 1px, transparent 1px), linear-gradient(90deg, #dfe7da 1px, transparent 1px)", backgroundSize: `${GRID}px ${GRID}px` }}>
-            {!placed.length && <div className="absolute inset-0 flex items-center justify-center"><div className="rounded-xl bg-white/90 px-6 py-5 text-center shadow-sm"><p className="font-bold text-slate-700">Your decking plan is empty</p><p className="mt-1 text-sm text-slate-500">Add a box section to begin building.</p></div></div>}
+            <div className="pointer-events-none absolute z-0 rounded-xl border-4 border-slate-500/70 bg-sky-100/70 shadow-inner" style={{ left: (CANVAS_WIDTH - caravanSize.width) / 2, top: (CANVAS_HEIGHT - caravanSize.height) / 2, width: caravanSize.width, height: caravanSize.height }}>
+              <div className="absolute inset-3 rounded-lg border border-dashed border-slate-400/70" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-white/90 px-4 py-2 text-center shadow-sm"><strong className="block text-base text-slate-800">CARAVAN</strong><span className="text-sm font-bold text-slate-600">38 ft × 12 ft</span></div>
+              <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs font-bold text-white">{caravanVertical ? "12 ft · 3,658 mm" : "38 ft · 11,582 mm"}</span>
+              <span className="absolute -right-16 top-1/2 -translate-y-1/2 rotate-90 whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs font-bold text-white">{caravanVertical ? "38 ft · 11,582 mm" : "12 ft · 3,658 mm"}</span>
+            </div>
+            {!placed.length && <div className="pointer-events-none absolute inset-0 z-10 flex items-end justify-center pb-5"><div className="rounded-xl bg-white/90 px-6 py-4 text-center shadow-sm"><p className="font-bold text-slate-700">Add decking around the caravan</p><p className="mt-1 text-sm text-slate-500">Choose a numbered box section to begin.</p></div></div>}
             {placed.map((item) => {
               const moduleDefinition = deckModules.find((candidate) => candidate.id === item.moduleId)!;
               const size = modulePixels(moduleDefinition, item.rotated, item.siteLengthMm, item.siteWidthMm);
@@ -164,7 +179,7 @@ export default function DeckingDesigner() {
             })}
           </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">Scale: 1 px = approx. 13.3 mm. All posts are shown as 100 mm × 100 mm. Prices are net of VAT and the plan saves automatically on this device.</p>
+        <p className="mt-3 text-xs text-slate-500">The highlighted caravan is 38 ft × 12 ft. All posts are shown as 100 mm × 100 mm. Prices are net of VAT and the plan saves automatically on this device.</p>
       </section>
     </div>
   );
