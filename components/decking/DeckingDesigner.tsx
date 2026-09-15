@@ -82,8 +82,9 @@ export default function DeckingDesigner() {
           setPlaced(items.map((item) => {
             const definition = deckModules.find((candidate) => candidate.id === item.moduleId);
             if (!definition) return item;
-            const size = modulePixels(definition, item.rotated, item.siteLengthMm, item.siteWidthMm);
-            return { ...item, x: Math.max(0, Math.min(item.x, CANVAS_WIDTH - size.width)), y: Math.max(0, Math.min(item.y, CANVAS_HEIGHT - size.height)) };
+            const migratedWidth = item.moduleId >= 21 && item.moduleId <= 24 && item.siteWidthMm === 2470 ? 2370 : item.siteWidthMm;
+            const size = modulePixels(definition, item.rotated, item.siteLengthMm, migratedWidth);
+            return { ...item, siteWidthMm: migratedWidth, x: Math.max(0, Math.min(item.x, CANVAS_WIDTH - size.width)), y: Math.max(0, Math.min(item.y, CANVAS_HEIGHT - size.height)) };
           }));
         }
       } catch { /* start with a clean plan if saved data is invalid */ }
