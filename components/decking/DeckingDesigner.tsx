@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { deckModules, POST_SIZE_MM, type DeckModule, type PostCorner, type RailSide } from "@/lib/decking-modules";
 
-type PlacedModule = { instanceId: string; moduleId: number; x: number; y: number; rotated: boolean; siteLengthMm?: number; siteWidthMm?: number };
+type PlacedModule = { instanceId: string; moduleId: number; x: number; y: number; rotated: boolean; flipped?: boolean; siteLengthMm?: number; siteWidthMm?: number };
 type DragState = { instanceId: string; offsetX: number; offsetY: number } | null;
 
 const SCALE = 0.055;
 const ONE_FOOT_GRID = 304.8 * SCALE;
 const GRID = ONE_FOOT_GRID / 2;
+const EDGE_SNAP_DISTANCE = 12;
 const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 1100;
 const CARAVAN_LENGTH_MM = 11582;
@@ -22,12 +23,16 @@ function modulePixels(module: DeckModule, rotated: boolean, siteLengthMm: number
   return rotated ? { width: height, height: width } : { width, height };
 }
 
-function ModuleDrawing({ module, compact = false, presentation = false, rotated = false }: { module: DeckModule; compact?: boolean; presentation?: boolean; rotated?: boolean }) {
+function ModuleDrawing({ module, compact = false, presentation = false, rotated = false, flipped = false }: { module: DeckModule; compact?: boolean; presentation?: boolean; rotated?: boolean; flipped?: boolean }) {
   const post = Math.max(compact ? 7 : POST_SIZE_MM * SCALE, 7);
   const rotateCorner: Record<PostCorner, PostCorner> = { tl: "tr", tr: "br", br: "bl", bl: "tl" };
   const rotateRail: Record<RailSide, RailSide> = { top: "right", right: "bottom", bottom: "left", left: "top" };
-  const posts = rotated ? module.posts.map((corner) => rotateCorner[corner]) : module.posts;
-  const rails = rotated ? module.rails.map((side) => rotateRail[side]) : module.rails;
+  const mirrorCorner: Record<PostCorner, PostCorner> = { tl: "tr", tr: "tl", br: "bl", bl: "br" };
+  const mirrorRail: Record<RailSide, RailSide> = { top: "top", right: "left", bottom: "bottom", left: "right" };
+  const rotatedPosts = rotated ? module.posts.map((corner) => rotateCorner[corner]) : module.posts;
+  const rotatedRails = rotated ? module.rails.map((side) => rotateRail[side]) : module.rails;
+  const posts = flipped ? rotatedPosts.map((corner) => mirrorCorner[corner]) : rotatedPosts;
+  const rails = flipped ? rotatedRails.map((side) => mirrorRail[side]) : rotatedRails;
   return (
     <div className={`relative h-full w-full rounded-sm border-2 shadow-sm ${presentation ? "border-[#222a2c] bg-[#3f4b4f]" : "border-[#4d4f4c] bg-[#d9b77d]"}`} style={presentation ? { backgroundImage: "repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,255,255,.10) 7px 8px)" } : undefined}>
       {rails.map((side) => <Rail key={side} side={side} presentation={presentation} />)}
@@ -110,7 +115,7 @@ export default function DeckingDesigner() {
     const item: PlacedModule = {
       instanceId: crypto.randomUUID(), moduleId,
       x: x ?? Math.min(30 + offset, CANVAS_WIDTH - size.width - 10),
-      y: y ?? Math.min(30 + offset, CANVAS_HEIGHT - size.height - 10), rotated: false,
+      y: y ?? Math.min(30 + offset, CANVAS_HEIGHT - size.height - 10), rotated: false, flipped: false,
       siteLengthMm: moduleDefinition.lengthMm, siteWidthMm: moduleDefinition.widthMm,
     };
     setPlaced((current) => [...current, item]);
@@ -133,13 +138,35 @@ export default function DeckingDesigner() {
       if (item.instanceId !== drag.instanceId) return item;
       const moduleDefinition = deckModules.find((candidate) => candidate.id === item.moduleId)!;
       const size = modulePixels(moduleDefinition, item.rotated, item.siteLengthMm, item.siteWidthMm);
-      const x = Math.round(Math.max(0, Math.min((event.clientX - rect.left) / canvasZoom - drag.offsetX, CANVAS_WIDTH - size.width)) / GRID) * GRID;
-      const y = Math.round(Math.max(0, Math.min((event.clientY - rect.top) / canvasZoom - drag.offsetY, CANVAS_HEIGHT - size.height)) / GRID) * GRID;
+      let x = Math.round(Math.max(0, Math.min((event.clientX - rect.left) / canvasZoom - drag.offsetX, CANVAS_WIDTH - size.width)) / GRID) * GRID;
+      let y = Math.round(Math.max(0, Math.min((event.clientY - rect.top) / canvasZoom - drag.offsetY, CANVAS_HEIGHT - size.height)) / GRID) * GRID;
+
+      for (const neighbour of current) {
+        if (neighbour.instanceId === item.instanceId) continue;
+        const neighbourDefinition = deckModules.find((candidate) => candidate.id === neighbour.moduleId)!;
+        const neighbourSize = modulePixels(neighbourDefinition, neighbour.rotated, neighbour.siteLengthMm, neighbour.siteWidthMm);
+        const overlapsVertically = y < neighbour.y + neighbourSize.height + EDGE_SNAP_DISTANCE && y + size.height > neighbour.y - EDGE_SNAP_DISTANCE;
+        const overlapsHorizontally = x < neighbour.x + neighbourSize.width + EDGE_SNAP_DISTANCE && x + size.width > neighbour.x - EDGE_SNAP_DISTANCE;
+
+        if (overlapsVertically && Math.abs(x - (neighbour.x + neighbourSize.width)) <= EDGE_SNAP_DISTANCE) x = neighbour.x + neighbourSize.width;
+        else if (overlapsVertically && Math.abs(x + size.width - neighbour.x) <= EDGE_SNAP_DISTANCE) x = neighbour.x - size.width;
+
+        if (overlapsHorizontally && Math.abs(y - (neighbour.y + neighbourSize.height)) <= EDGE_SNAP_DISTANCE) y = neighbour.y + neighbourSize.height;
+        else if (overlapsHorizontally && Math.abs(y + size.height - neighbour.y) <= EDGE_SNAP_DISTANCE) y = neighbour.y - size.height;
+
+        if (Math.abs(y - neighbour.y) <= EDGE_SNAP_DISTANCE) y = neighbour.y;
+        else if (Math.abs(y + size.height - (neighbour.y + neighbourSize.height)) <= EDGE_SNAP_DISTANCE) y = neighbour.y + neighbourSize.height - size.height;
+        if (Math.abs(x - neighbour.x) <= EDGE_SNAP_DISTANCE) x = neighbour.x;
+        else if (Math.abs(x + size.width - (neighbour.x + neighbourSize.width)) <= EDGE_SNAP_DISTANCE) x = neighbour.x + neighbourSize.width - size.width;
+      }
+
+      x = Math.max(0, Math.min(x, CANVAS_WIDTH - size.width));
+      y = Math.max(0, Math.min(y, CANVAS_HEIGHT - size.height));
       return { ...item, x, y };
     }));
   }
 
-  function updateSelected(action: "rotate" | "duplicate" | "delete") {
+  function updateSelected(action: "rotate" | "flip" | "duplicate" | "delete") {
     const item = placed.find((candidate) => candidate.instanceId === selected);
     if (!item) return;
     if (action === "delete") {
@@ -148,6 +175,9 @@ export default function DeckingDesigner() {
     if (action === "duplicate") {
       const copy = { ...item, instanceId: crypto.randomUUID(), x: item.x + 20, y: item.y + 20 };
       setPlaced((current) => [...current, copy]); setSelected(copy.instanceId); return;
+    }
+    if (action === "flip") {
+      setPlaced((current) => current.map((candidate) => candidate.instanceId === selected ? { ...candidate, flipped: !candidate.flipped } : candidate)); return;
     }
     setPlaced((current) => current.map((candidate) => candidate.instanceId === selected ? { ...candidate, rotated: !candidate.rotated } : candidate));
   }
@@ -194,6 +224,7 @@ export default function DeckingDesigner() {
               <button type="button" onClick={() => setFinalView(true)} className={`rounded-md px-3 py-1.5 text-sm font-bold ${finalView ? "bg-[#4d4f4c] text-white shadow-sm" : "text-slate-500"}`}>Final view</button>
             </div>
             <button type="button" disabled={!selected} onClick={() => updateSelected("rotate")} className="secondary-button">↻ Rotate</button>
+            <button type="button" disabled={!selected} onClick={() => updateSelected("flip")} className="secondary-button">⇄ Flip / mirror</button>
             <button type="button" disabled={!selected} onClick={() => updateSelected("duplicate")} className="secondary-button">Duplicate</button>
             <button type="button" disabled={!selected} onClick={() => updateSelected("delete")} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-40">Remove</button>
             <button type="button" onClick={() => setCaravanVertical((current) => !current)} className="secondary-button">↻ Rotate caravan</button>
@@ -218,7 +249,7 @@ export default function DeckingDesigner() {
             {placed.map((item) => {
               const moduleDefinition = deckModules.find((candidate) => candidate.id === item.moduleId)!;
               const size = modulePixels(moduleDefinition, item.rotated, item.siteLengthMm, item.siteWidthMm);
-              return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId && !finalView ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} presentation={finalView} rotated={item.rotated} />{!finalView && <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span>}</button>;
+              return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId && !finalView ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} presentation={finalView} rotated={item.rotated} flipped={item.flipped} />{!finalView && <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span>}</button>;
             })}
           </div>
           </div>
