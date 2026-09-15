@@ -20,22 +20,22 @@ function modulePixels(module: DeckModule, rotated: boolean, siteLengthMm: number
   return rotated ? { width: height, height: width } : { width, height };
 }
 
-function ModuleDrawing({ module, compact = false }: { module: DeckModule; compact?: boolean }) {
+function ModuleDrawing({ module, compact = false, presentation = false }: { module: DeckModule; compact?: boolean; presentation?: boolean }) {
   const post = Math.max(compact ? 7 : POST_SIZE_MM * SCALE, 7);
   return (
-    <div className="relative h-full w-full rounded-sm border-2 border-[#4d4f4c] bg-[#d9b77d] shadow-sm">
-      <div className="absolute inset-x-1 top-1 border-t-2 border-[#686a67]" />
-      {module.posts.map((corner) => <Post key={corner} corner={corner} size={post} />)}
-      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-black text-slate-900 shadow-sm sm:text-xs">#{module.id}</span>
+    <div className={`relative h-full w-full rounded-sm border-2 shadow-sm ${presentation ? "border-[#222a2c] bg-[#3f4b4f]" : "border-[#4d4f4c] bg-[#d9b77d]"}`} style={presentation ? { backgroundImage: "repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,255,255,.10) 7px 8px)" } : undefined}>
+      <div className={`absolute inset-x-1 top-1 border-t-2 ${presentation ? "border-slate-200/70" : "border-[#686a67]"}`} />
+      {module.posts.map((corner) => <Post key={corner} corner={corner} size={post} presentation={presentation} />)}
+      {!presentation && <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-black text-slate-900 shadow-sm sm:text-xs">#{module.id}</span>}
     </div>
   );
 }
 
-function Post({ corner, size }: { corner: PostCorner; size: number }) {
+function Post({ corner, size, presentation = false }: { corner: PostCorner; size: number; presentation?: boolean }) {
   const positions: Record<PostCorner, string> = {
     tl: "-left-1 -top-1", tr: "-right-1 -top-1", bl: "-bottom-1 -left-1", br: "-bottom-1 -right-1",
   };
-  return <span className={`absolute z-10 border border-slate-700 bg-slate-100 ${positions[corner]}`} style={{ width: size, height: size }} aria-label="100 mm post" />;
+  return <span className={`absolute z-10 border border-slate-700 ${presentation ? "bg-[#1f2729]" : "bg-slate-100"} ${positions[corner]}`} style={{ width: size, height: size }} aria-label="100 mm post" />;
 }
 
 export default function DeckingDesigner() {
@@ -45,6 +45,7 @@ export default function DeckingDesigner() {
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragState>(null);
   const [caravanVertical, setCaravanVertical] = useState(true);
+  const [finalView, setFinalView] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -151,6 +152,10 @@ export default function DeckingDesigner() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
           <div><span className="text-sm text-slate-500">Boxes: </span><strong>{placed.length}</strong><span className="ml-4 text-sm text-slate-500">Net total: </span><strong className="text-xl">{money.format(total)}</strong></div>
           <div className="flex flex-wrap gap-2">
+            <div className="inline-flex rounded-lg border border-slate-300 bg-slate-100 p-1" aria-label="Plan appearance">
+              <button type="button" onClick={() => setFinalView(false)} className={`rounded-md px-3 py-1.5 text-sm font-bold ${!finalView ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>Plan view</button>
+              <button type="button" onClick={() => setFinalView(true)} className={`rounded-md px-3 py-1.5 text-sm font-bold ${finalView ? "bg-[#4d4f4c] text-white shadow-sm" : "text-slate-500"}`}>Final view</button>
+            </div>
             <button type="button" disabled={!selected} onClick={() => updateSelected("rotate")} className="secondary-button">↻ Rotate</button>
             <button type="button" disabled={!selected} onClick={() => updateSelected("duplicate")} className="secondary-button">Duplicate</button>
             <button type="button" disabled={!selected} onClick={() => updateSelected("delete")} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-40">Remove</button>
@@ -164,9 +169,9 @@ export default function DeckingDesigner() {
           <label><span className="field-label">Actual site width (mm)</span><input type="number" min="100" step="1" className="form-input" value={selectedItem.siteWidthMm ?? selectedDefinition.widthMm} onChange={(event) => updateSelectedMeasurement("siteWidthMm", Number(event.target.value))} /></label>
         </div>}
         <div className="overflow-auto rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
-          <div ref={canvasRef} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = Number(event.dataTransfer.getData("text/module-id")); const rect = canvasRef.current?.getBoundingClientRect(); if (id && rect) addModule(id, event.clientX - rect.left - 60, event.clientY - rect.top - 35); }} className="relative touch-none overflow-hidden rounded-lg border-2 border-dashed border-slate-300" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: "#f8faf7", backgroundImage: "linear-gradient(#dfe7da 1px, transparent 1px), linear-gradient(90deg, #dfe7da 1px, transparent 1px)", backgroundSize: `${GRID}px ${GRID}px` }}>
-            <div className="pointer-events-none absolute z-0 rounded-xl border-4 border-slate-500/70 bg-sky-100/70 shadow-inner" style={{ left: (CANVAS_WIDTH - caravanSize.width) / 2, top: (CANVAS_HEIGHT - caravanSize.height) / 2, width: caravanSize.width, height: caravanSize.height }}>
-              <div className="absolute inset-3 rounded-lg border border-dashed border-slate-400/70" />
+          <div ref={canvasRef} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = Number(event.dataTransfer.getData("text/module-id")); const rect = canvasRef.current?.getBoundingClientRect(); if (id && rect) addModule(id, event.clientX - rect.left - 60, event.clientY - rect.top - 35); }} className={`relative touch-none overflow-hidden rounded-lg border-2 ${finalView ? "border-emerald-950/40" : "border-dashed border-slate-300"}`} style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: finalView ? "#55753c" : "#f8faf7", backgroundImage: finalView ? "radial-gradient(circle at 20% 30%, rgba(255,255,255,.12) 0 1px, transparent 2px), radial-gradient(circle at 70% 65%, rgba(20,60,20,.20) 0 1px, transparent 2px)" : "linear-gradient(#dfe7da 1px, transparent 1px), linear-gradient(90deg, #dfe7da 1px, transparent 1px)", backgroundSize: finalView ? "13px 17px, 19px 23px" : `${GRID}px ${GRID}px` }}>
+            <div className={`pointer-events-none absolute z-0 rounded-xl border-4 shadow-xl ${finalView ? "border-[#5e5548] bg-[#f2eee5]" : "border-slate-500/70 bg-sky-100/70"}`} style={{ left: (CANVAS_WIDTH - caravanSize.width) / 2, top: (CANVAS_HEIGHT - caravanSize.height) / 2, width: caravanSize.width, height: caravanSize.height }}>
+              <div className={`absolute inset-3 rounded-lg border ${finalView ? "border-[#d8d0c2]" : "border-dashed border-slate-400/70"}`} />
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-white/90 px-4 py-2 text-center shadow-sm"><strong className="block text-base text-slate-800">CARAVAN</strong><span className="text-sm font-bold text-slate-600">38 ft × 12 ft</span></div>
               <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs font-bold text-white">{caravanVertical ? "12 ft · 3,658 mm" : "38 ft · 11,582 mm"}</span>
               <span className="absolute -right-16 top-1/2 -translate-y-1/2 rotate-90 whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs font-bold text-white">{caravanVertical ? "38 ft · 11,582 mm" : "12 ft · 3,658 mm"}</span>
@@ -175,11 +180,11 @@ export default function DeckingDesigner() {
             {placed.map((item) => {
               const moduleDefinition = deckModules.find((candidate) => candidate.id === item.moduleId)!;
               const size = modulePixels(moduleDefinition, item.rotated, item.siteLengthMm, item.siteWidthMm);
-              return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} /><span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span></button>;
+              return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId && !finalView ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} presentation={finalView} />{!finalView && <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span>}</button>;
             })}
           </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">The highlighted caravan is 38 ft × 12 ft. All posts are shown as 100 mm × 100 mm. Prices are net of VAT and the plan saves automatically on this device.</p>
+        <p className="mt-3 text-xs text-slate-500">Use Plan View for accurate positioning and Final View for the cleaner customer layout. The caravan is 38 ft × 12 ft and posts are 100 mm × 100 mm.</p>
       </section>
     </div>
   );
