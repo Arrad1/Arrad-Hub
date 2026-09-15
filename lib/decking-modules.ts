@@ -1,4 +1,5 @@
 export type PostCorner = "tl" | "tr" | "bl" | "br";
+export type RailSide = "top" | "right" | "bottom" | "left";
 
 export type DeckModule = {
   id: number;
@@ -9,6 +10,7 @@ export type DeckModule = {
   layout: "A" | "B";
   price: number;
   posts: PostCorner[];
+  rails: RailSide[];
 };
 
 const widths = [
@@ -20,11 +22,11 @@ const widths = [
   { ft: 8, mm: 2470, prices: [1370, 1011, 1268, 1657] },
 ];
 
-const variants: Array<Pick<DeckModule, "lengthFt" | "lengthMm" | "layout" | "posts">> = [
-  { lengthFt: 6, lengthMm: 1850, layout: "A", posts: ["tl", "tr", "bl", "br"] },
-  { lengthFt: 6, lengthMm: 1850, layout: "B", posts: ["tr", "bl", "br"] },
-  { lengthFt: 8, lengthMm: 2470, layout: "A", posts: ["tr", "bl"] },
-  { lengthFt: 8, lengthMm: 2470, layout: "B", posts: ["tl", "tr", "bl", "br"] },
+const variants: Array<Pick<DeckModule, "lengthFt" | "lengthMm" | "layout" | "posts" | "rails">> = [
+  { lengthFt: 6, lengthMm: 1850, layout: "A", posts: ["tl", "tr", "bl"], rails: ["top", "left"] },
+  { lengthFt: 6, lengthMm: 1850, layout: "B", posts: ["tr", "bl"], rails: ["top"] },
+  { lengthFt: 8, lengthMm: 2470, layout: "A", posts: ["tr", "bl"], rails: ["top"] },
+  { lengthFt: 8, lengthMm: 2470, layout: "B", posts: ["tl", "tr", "br"], rails: ["top", "right"] },
 ];
 
 export const POST_SIZE_MM = 100;
