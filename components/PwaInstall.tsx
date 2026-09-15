@@ -9,6 +9,7 @@ interface InstallPromptEvent extends Event {
 
 export default function PwaInstall() {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const isAndroid = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -29,7 +30,7 @@ export default function PwaInstall() {
     };
   }, []);
 
-  if (!installPrompt) return null;
+  if (isAndroid || !installPrompt) return null;
 
   async function install() {
     if (!installPrompt) return;
