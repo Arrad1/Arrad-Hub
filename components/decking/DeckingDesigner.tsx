@@ -13,6 +13,7 @@ const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 1100;
 const CARAVAN_LENGTH_MM = 11582;
 const CARAVAN_WIDTH_MM = 3658;
+const CARAVAN_RIGHT_GAP = ONE_FOOT_GRID * 4;
 const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 });
 
 function modulePixels(module: DeckModule, rotated: boolean, siteLengthMm: number = module.lengthMm, siteWidthMm: number = module.widthMm) {
@@ -192,7 +193,7 @@ export default function DeckingDesigner() {
         <div ref={viewportRef} className="overflow-hidden rounded-xl border border-slate-300 bg-white p-1 shadow-sm sm:p-3">
           <div className="relative mx-auto" style={{ width: CANVAS_WIDTH * canvasZoom, height: CANVAS_HEIGHT * canvasZoom }}>
           <div ref={canvasRef} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = Number(event.dataTransfer.getData("text/module-id")); const rect = canvasRef.current?.getBoundingClientRect(); if (id && rect) addModule(id, (event.clientX - rect.left) / canvasZoom - 60, (event.clientY - rect.top) / canvasZoom - 35); }} className={`relative origin-top-left touch-none overflow-hidden rounded-lg border-2 ${finalView ? "border-emerald-950/40" : "border-dashed border-slate-300"}`} style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, transform: `scale(${canvasZoom})`, backgroundColor: finalView ? "#55753c" : "#f8faf7", backgroundImage: finalView ? "radial-gradient(circle at 20% 30%, rgba(255,255,255,.12) 0 1px, transparent 2px), radial-gradient(circle at 70% 65%, rgba(20,60,20,.20) 0 1px, transparent 2px)" : "linear-gradient(#d2ded0 1px, transparent 1px), linear-gradient(90deg, #d2ded0 1px, transparent 1px)", backgroundSize: finalView ? "13px 17px, 19px 23px" : `${ONE_FOOT_GRID}px ${ONE_FOOT_GRID}px` }}>
-            <div className={`pointer-events-none absolute z-0 rounded-xl border-4 shadow-xl ${finalView ? "border-[#5e5548] bg-[#f2eee5]" : "border-slate-500/70 bg-sky-100/70"}`} style={{ left: (CANVAS_WIDTH - caravanSize.width) / 2, top: (CANVAS_HEIGHT - caravanSize.height) / 2, width: caravanSize.width, height: caravanSize.height }}>
+            <div className={`pointer-events-none absolute z-0 rounded-xl border-4 shadow-xl ${finalView ? "border-[#5e5548] bg-[#f2eee5]" : "border-slate-500/70 bg-sky-100/70"}`} style={{ left: CANVAS_WIDTH - caravanSize.width - CARAVAN_RIGHT_GAP, top: (CANVAS_HEIGHT - caravanSize.height) / 2, width: caravanSize.width, height: caravanSize.height }}>
               <div className={`absolute inset-3 rounded-lg border ${finalView ? "border-[#d8d0c2]" : "border-dashed border-slate-400/70"}`} />
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-white/90 px-4 py-2 text-center shadow-sm"><strong className="block text-base text-slate-800">CARAVAN</strong><span className="text-sm font-bold text-slate-600">38 ft × 12 ft</span></div>
               <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs font-bold text-white">{caravanVertical ? "12 ft · 3,658 mm" : "38 ft · 11,582 mm"}</span>
