@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { deckModules, POST_SIZE_MM, type DeckModule, type PostCorner } from "@/lib/decking-modules";
+import { deckModules, POST_SIZE_MM, type DeckModule, type PostCorner, type RailSide } from "@/lib/decking-modules";
 
 type PlacedModule = { instanceId: string; moduleId: number; x: number; y: number; rotated: boolean; siteLengthMm?: number; siteWidthMm?: number };
 type DragState = { instanceId: string; offsetX: number; offsetY: number } | null;
@@ -22,15 +22,30 @@ function modulePixels(module: DeckModule, rotated: boolean, siteLengthMm: number
   return rotated ? { width: height, height: width } : { width, height };
 }
 
-function ModuleDrawing({ module, compact = false, presentation = false }: { module: DeckModule; compact?: boolean; presentation?: boolean }) {
+function ModuleDrawing({ module, compact = false, presentation = false, rotated = false }: { module: DeckModule; compact?: boolean; presentation?: boolean; rotated?: boolean }) {
   const post = Math.max(compact ? 7 : POST_SIZE_MM * SCALE, 7);
+  const rotateCorner: Record<PostCorner, PostCorner> = { tl: "tr", tr: "br", br: "bl", bl: "tl" };
+  const rotateRail: Record<RailSide, RailSide> = { top: "right", right: "bottom", bottom: "left", left: "top" };
+  const posts = rotated ? module.posts.map((corner) => rotateCorner[corner]) : module.posts;
+  const rails = rotated ? module.rails.map((side) => rotateRail[side]) : module.rails;
   return (
     <div className={`relative h-full w-full rounded-sm border-2 shadow-sm ${presentation ? "border-[#222a2c] bg-[#3f4b4f]" : "border-[#4d4f4c] bg-[#d9b77d]"}`} style={presentation ? { backgroundImage: "repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,255,255,.10) 7px 8px)" } : undefined}>
-      <div className={`absolute inset-x-1 top-1 border-t-2 ${presentation ? "border-slate-200/70" : "border-[#686a67]"}`} />
-      {module.posts.map((corner) => <Post key={corner} corner={corner} size={post} presentation={presentation} />)}
+      {rails.map((side) => <Rail key={side} side={side} presentation={presentation} />)}
+      {posts.map((corner) => <Post key={corner} corner={corner} size={post} presentation={presentation} />)}
       {!presentation && <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-black text-slate-900 shadow-sm sm:text-xs">#{module.id}</span>}
     </div>
   );
+}
+
+function Rail({ side, presentation }: { side: RailSide; presentation: boolean }) {
+  const colour = presentation ? "border-slate-200/70" : "border-[#686a67]";
+  const positions: Record<RailSide, string> = {
+    top: `absolute inset-x-1 top-1 border-t-2 ${colour}`,
+    right: `absolute inset-y-1 right-1 border-r-2 ${colour}`,
+    bottom: `absolute inset-x-1 bottom-1 border-b-2 ${colour}`,
+    left: `absolute inset-y-1 left-1 border-l-2 ${colour}`,
+  };
+  return <span className={positions[side]} />;
 }
 
 function Post({ corner, size, presentation = false }: { corner: PostCorner; size: number; presentation?: boolean }) {
@@ -203,7 +218,7 @@ export default function DeckingDesigner() {
             {placed.map((item) => {
               const moduleDefinition = deckModules.find((candidate) => candidate.id === item.moduleId)!;
               const size = modulePixels(moduleDefinition, item.rotated, item.siteLengthMm, item.siteWidthMm);
-              return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId && !finalView ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} presentation={finalView} />{!finalView && <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span>}</button>;
+              return <button key={item.instanceId} type="button" aria-label={`Move module ${moduleDefinition.id}`} onPointerDown={(event) => startMove(event, item)} onPointerMove={move} onPointerUp={() => setDrag(null)} onPointerCancel={() => setDrag(null)} className={`absolute cursor-grab touch-none select-none ${selected === item.instanceId && !finalView ? "z-20 ring-4 ring-[#7ac400] ring-offset-2" : "z-10"}`} style={{ left: item.x, top: item.y, width: size.width, height: size.height }}><ModuleDrawing module={moduleDefinition} presentation={finalView} rotated={item.rotated} />{!finalView && <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.siteLengthMm ?? moduleDefinition.lengthMm} mm</span>}</button>;
             })}
           </div>
           </div>
