@@ -6,7 +6,7 @@ import { deckModules, POST_SIZE_MM, type DeckModule, type PostCorner, type RailS
 type PlacedModule = { instanceId: string; moduleId: number; x: number; y: number; rotated: boolean; flipped?: boolean; siteLengthMm?: number; siteWidthMm?: number };
 type DragState = { instanceId: string; offsetX: number; offsetY: number } | null;
 type AccessoryKind = "steps" | "gate";
-type PlacedAccessory = { instanceId: string; kind: AccessoryKind; x: number; y: number; rotated: boolean; widthMm: number; treads?: number; riseMm?: number; goingMm?: number };
+type PlacedAccessory = { instanceId: string; kind: AccessoryKind; x: number; y: number; rotated: boolean; widthMm: number; treads?: number; riseMm?: number; goingMm?: number; finishFloorMm?: number };
 
 const SCALE = 0.055;
 const ONE_FOOT_GRID = 304.8 * SCALE;
@@ -39,6 +39,7 @@ function AccessoryDrawing({ item, presentation }: { item: PlacedAccessory; prese
   return <div className={`relative h-full w-full border-2 border-slate-700 ${presentation ? "bg-[#3f4b4f]" : "bg-[#d9b77d]"}`} style={{ backgroundImage: `repeating-linear-gradient(${treadDirection}, transparent 0 calc(${100 / (item.treads ?? 3)}% - 1px), rgba(30,41,59,.75) calc(${100 / (item.treads ?? 3)}% - 1px) ${100 / (item.treads ?? 3)}%)` }}>
     {(["tl", "tr", "bl", "br"] as PostCorner[]).map((corner) => <Post key={corner} corner={corner} size={7} presentation={presentation} />)}
     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-white/90 px-1 text-[9px] font-black text-slate-900">{item.treads} STEP{item.treads === 1 ? "" : "S"}</span>
+    <span className="absolute -right-1 bottom-0 translate-x-full whitespace-nowrap rounded bg-fuchsia-100 px-1 py-0.5 text-[9px] font-black text-fuchsia-900">FF {item.finishFloorMm ?? (item.treads ?? 3) * (item.riseMm ?? 150)} mm</span>
   </div>;
 }
 
@@ -94,7 +95,7 @@ export default function DeckingDesigner() {
   const [canvasZoom, setCanvasZoom] = useState(1);
   const [loaded, setLoaded] = useState(false);
   const [measurementDraft, setMeasurementDraft] = useState({ siteLengthMm: "", siteWidthMm: "" });
-  const [accessoryDraft, setAccessoryDraft] = useState({ widthMm: "", riseMm: "", goingMm: "" });
+  const [accessoryDraft, setAccessoryDraft] = useState({ widthMm: "", riseMm: "", goingMm: "", finishFloorMm: "" });
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -155,7 +156,7 @@ export default function DeckingDesigner() {
   }
 
   function addAccessory(kind: AccessoryKind, x?: number, y?: number) {
-    const item: PlacedAccessory = { instanceId: crypto.randomUUID(), kind, x: x ?? 40, y: y ?? 80, rotated: false, widthMm: kind === "steps" ? 760 : 740, ...(kind === "steps" ? { treads: 3, riseMm: 150, goingMm: 250 } : {}) };
+    const item: PlacedAccessory = { instanceId: crypto.randomUUID(), kind, x: x ?? 40, y: y ?? 80, rotated: false, widthMm: kind === "steps" ? 760 : 740, ...(kind === "steps" ? { treads: 3, riseMm: 150, goingMm: 250, finishFloorMm: 450 } : {}) };
     setAccessories((current) => [...current, item]);
     setSelectedAccessory(item.instanceId);
     setSelected(null);
@@ -203,13 +204,13 @@ export default function DeckingDesigner() {
     setAccessories((current) => current.map((candidate) => candidate.instanceId === selectedAccessory ? { ...candidate, rotated: !candidate.rotated } : candidate));
   }
 
-  function commitAccessoryMeasurement(field: "widthMm" | "riseMm" | "goingMm") {
+  function commitAccessoryMeasurement(field: "widthMm" | "riseMm" | "goingMm" | "finishFloorMm") {
     if (!selectedAccessoryItem) return;
     const value = Number(accessoryDraft[field]);
     if (Number.isFinite(value) && value >= 50) {
       setAccessories((current) => current.map((item) => item.instanceId === selectedAccessory ? { ...item, [field]: value } : item));
     } else {
-      const fallback = field === "widthMm" ? selectedAccessoryItem.widthMm : field === "riseMm" ? selectedAccessoryItem.riseMm ?? 150 : selectedAccessoryItem.goingMm ?? 250;
+      const fallback = field === "widthMm" ? selectedAccessoryItem.widthMm : field === "riseMm" ? selectedAccessoryItem.riseMm ?? 150 : field === "goingMm" ? selectedAccessoryItem.goingMm ?? 250 : selectedAccessoryItem.finishFloorMm ?? (selectedAccessoryItem.treads ?? 3) * (selectedAccessoryItem.riseMm ?? 150);
       setAccessoryDraft((current) => ({ ...current, [field]: String(fallback) }));
     }
   }
@@ -282,7 +283,7 @@ export default function DeckingDesigner() {
   const selectedDefinition = selectedItem ? deckModules.find((item) => item.id === selectedItem.moduleId) : undefined;
   const selectedAccessoryItem = accessories.find((item) => item.instanceId === selectedAccessory);
   useEffect(() => {
-    if (selectedAccessoryItem) setAccessoryDraft({ widthMm: String(selectedAccessoryItem.widthMm), riseMm: String(selectedAccessoryItem.riseMm ?? 150), goingMm: String(selectedAccessoryItem.goingMm ?? 250) });
+    if (selectedAccessoryItem) setAccessoryDraft({ widthMm: String(selectedAccessoryItem.widthMm), riseMm: String(selectedAccessoryItem.riseMm ?? 150), goingMm: String(selectedAccessoryItem.goingMm ?? 250), finishFloorMm: String(selectedAccessoryItem.finishFloorMm ?? (selectedAccessoryItem.treads ?? 3) * (selectedAccessoryItem.riseMm ?? 150)) });
   }, [selectedAccessory, selectedAccessoryItem]);
   useEffect(() => {
     if (!selectedItem || !selectedDefinition) return;
@@ -361,6 +362,7 @@ export default function DeckingDesigner() {
             <label><span className="field-label">{selectedAccessoryItem.kind === "gate" ? "Gate" : "Step"} width (mm)</span><input type="number" inputMode="numeric" min="100" step="1" className="form-input" value={accessoryDraft.widthMm} onChange={(event) => setAccessoryDraft((current) => ({ ...current, widthMm: event.target.value }))} onBlur={() => commitAccessoryMeasurement("widthMm")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>
             {selectedAccessoryItem.kind === "steps" && <label><span className="field-label">Rise per tread (mm)</span><input type="number" inputMode="numeric" min="50" step="1" className="form-input" value={accessoryDraft.riseMm} onChange={(event) => setAccessoryDraft((current) => ({ ...current, riseMm: event.target.value }))} onBlur={() => commitAccessoryMeasurement("riseMm")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>}
             {selectedAccessoryItem.kind === "steps" && <label><span className="field-label">Going per tread (mm)</span><input type="number" inputMode="numeric" min="50" step="1" className="form-input" value={accessoryDraft.goingMm} onChange={(event) => setAccessoryDraft((current) => ({ ...current, goingMm: event.target.value }))} onBlur={() => commitAccessoryMeasurement("goingMm")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>}
+            {selectedAccessoryItem.kind === "steps" && <label><span className="field-label">FF – Finished floor (mm)</span><input type="number" inputMode="numeric" min="50" step="1" className="form-input" value={accessoryDraft.finishFloorMm} onChange={(event) => setAccessoryDraft((current) => ({ ...current, finishFloorMm: event.target.value }))} onBlur={() => commitAccessoryMeasurement("finishFloorMm")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>}
           </div>
           <div className="flex flex-wrap gap-2"><button type="button" onClick={() => updateSelectedAccessory("rotate")} className="secondary-button">↻ Rotate</button><button type="button" onClick={() => updateSelectedAccessory("duplicate")} className="secondary-button">Duplicate</button><button type="button" onClick={() => updateSelectedAccessory("delete")} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-bold text-rose-700">Remove</button></div>
         </div>}
