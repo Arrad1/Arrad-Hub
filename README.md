@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Arrad Hub
 
-## Getting Started
+Arrad Hub is an operational control centre for Arrad Foot Balconies Ltd. The first testing release connects the core journey:
 
-First, run the development server:
+**Enquiry → Quote → Accepted job → Drawings/manufacturing → Installation → Invoice**
+
+It also includes customer, stock, supplier and dashboard views.
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+npm run dev -- --hostname 127.0.0.1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://127.0.0.1:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## First testing script
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Add an enquiry with a customer, site and description.
+2. Select **Create quote** on the enquiry.
+3. Add or edit quote line items and save the quote.
+4. Review the customer quote and use **Print / save PDF**.
+5. Select **Accept & create job** and confirm the job appears under Live Jobs.
+6. Move the job through Survey, Manufacturing, Ready, Installation and Complete.
+7. Set the drawing status and a target date.
+8. Raise a draft invoice from the job, then mark it Sent and Paid.
+9. Add a stock item at its reorder level and confirm it appears under Needs attention on the dashboard.
+10. Add a supplier and confirm its email and phone links work.
+11. Check the Customers page consolidates the enquiry, quote and job under one customer.
+12. Check the layout on both a phone-sized screen and a desktop screen.
 
-## Learn More
+## Data during first testing
 
-To learn more about Next.js, take a look at the following resources:
+This release stores data in the browser on the device being used. It is suitable for workflow and usability testing, but it is not yet a shared multi-user production system. Clearing browser storage will remove test records.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Before live business use, add authentication, a shared database, backups and role-based access. Formal company details, VAT rules and payment terms should also be confirmed before customer quotes are issued from the system.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Validation
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```

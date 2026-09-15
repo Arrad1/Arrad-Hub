@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f7f3;
+  --foreground: #242624;
+  --arrad-charcoal: #4d4f4c;
+  --arrad-green: #7ac400;
+  --arrad-green-dark: #5e9e00;
 }
 
 @theme inline {
@@ -12,15 +15,50 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.form-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 0.625rem 0.75rem;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.form-input:focus {
+  border-color: var(--arrad-green);
+  box-shadow: 0 0 0 3px #e9f7d4;
+}
+
+.quote-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.field-label { margin-bottom: 0.5rem; display: block; font-size: 0.875rem; font-weight: 600; color: #334155; }
+.primary-button { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; background: var(--arrad-green); padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 800; color: #242624; transition: background 150ms; }
+.primary-button:hover { background: #8bd51d; }
+.primary-button:disabled { cursor: not-allowed; opacity: 0.45; }
+.secondary-button { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; border: 1px solid #cbd5e1; background: white; padding: 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 700; color: #1e293b; }
+.secondary-button:hover { background: #f8fafc; }
+.secondary-button:disabled { cursor: not-allowed; opacity: 0.45; }
+.small-select { border-radius: 0.5rem; border: 1px solid #cbd5e1; background: white; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #0f172a; }
+
+::selection { background: #d8f5ae; color: #242624; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  .no-print { display: none !important; }
+  .quote-document { min-height: 297mm; }
+  body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
